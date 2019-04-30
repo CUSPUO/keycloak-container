@@ -1,0 +1,45 @@
+version: "3.2"
+
+services:
+  mariadb:
+    container_name: mariadb
+    image: bitnami/mariadb:latest
+    volumes:
+      - /dk_location_specific_mounts/docker-registry/mariadb-data:/bitnami
+      - ./mariadb-healthcheck:/mariadb-healthcheck
+    networks:
+      - dbnet
+    expose:
+      - "3306"
+    env_file:
+      mariadb_secret.env
+    healthcheck:
+      test: ["CMD", "bash", "/mariadb-healthcheck"]
+      interval: 10s
+      timeout: 2s
+      retries: 3
+    restart: always
+
+  keycloak:
+    container_name: keycloak
+    image: jboss/keycloak:4.8.1.Final
+    depends_on:
+      - mariadb
+    networks:
+      - uonet
+      - webproxy
+      - dbnet
+    expose:
+      - "8080"
+    env_file:
+      keycloak_secret.env
+    restart: always
+
+networks:
+  uonet:
+    external:
+      name: uonet-overlay
+  webproxy:
+    external:
+      name: webproxy
+  dbnet:
